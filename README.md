@@ -21,7 +21,7 @@ Este projeto é um dashboard interativo para análise de pacotes perdidos e dani
 ## 📦 Instalação e Configuração com Docker
 
 ### Pré-requisitos
-
+- Git instalado na máquina.
 - Docker instalado na máquina.
 
 ### Passo a Passo
