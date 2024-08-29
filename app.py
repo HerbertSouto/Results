@@ -37,26 +37,68 @@ df = load_and_process_data(csv_path)
 
 # Configurar o Streamlit
 st.title("Lost & Damaged")
+# Criar gráfico de perda de pacotes por mês e semana
+st.text("Este relatório fornece uma análise detalhada das perdas e danos dos pacotes")
+
+# Adicionar espaço entre os KPIs e o texto
+st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois quebras de linha
 
 # Adicionar uma sidebar para o filtro de station_name
 station_names = ['Selecionar tudo'] + df['station_name'].unique().tolist()
 selected_station = st.sidebar.selectbox('Selecione a estação', options=station_names)
 
-# Filtrar os dados com base na seleção da estação
+# Adicionar filtro de período
+start_date = st.sidebar.date_input("Data de Início", df['First Received'].min())
+end_date = st.sidebar.date_input("Data de Fim", df['First Received'].max())
+
+# Filtrar os dados com base na seleção da estação e no período
 if selected_station == 'Selecionar tudo':
     df_filtered = df
 else:
     df_filtered = df[df['station_name'] == selected_station]
 
+df_filtered = df_filtered[
+    (df_filtered['First Received'] >= pd.to_datetime(start_date)) &
+    (df_filtered['First Received'] <= pd.to_datetime(end_date))
+]
+
 # Filtrar os dados com status 'Lost' e 'Damaged'
 df_filtered = df_filtered[df_filtered['Status_OM'].isin(['LOST', 'Damaged'])]
+
+# Calcular KPIs com base nos dados filtrados
+total_consignment_count = df_filtered['consignment_no'].nunique()
+lost_count = df_filtered[df_filtered['Status_OM'] == 'LOST']['consignment_no'].nunique()
+damaged_count = df_filtered[df_filtered['Status_OM'] == 'Damaged']['consignment_no'].nunique()
+
+# Adicionar cartões de KPIs no topo
+# Criar colunas para o layout dos KPIs
+col1, col2, col3 = st.columns(3)
+
+# Adicionar cartões de KPIs nas colunas
+with col1:
+    st.metric(
+        label="Total de perdas",
+        value=total_consignment_count
+    )
+
+with col2:
+    st.metric(
+        label="Total de Lost",
+        value=lost_count
+    )
+
+with col3:
+    st.metric(
+        label="Total de Damage",
+        value=damaged_count
+    )
+
+# Adicionar espaço entre os KPIs e o texto
+st.markdown("<br><br>", unsafe_allow_html=True)  # Adiciona dois quebras de linha
 
 # Contar a quantidade de pacotes por mês e semana
 perda_por_mes_semana = df_filtered.groupby(['Mês', 'Semana', 'Status_OM'])['consignment_no'].count().reset_index()
 perda_por_mes_semana.columns = ['Mês', 'Semana', 'Status', 'Quantidade de Consignments']
-
-# Criar o gráfico de perda de pacotes por mês e semana
-st.text("Este relatório fornece uma análise detalhada das perdas e danos dos pacotes")
 
 # Definindo a paleta de cores laranja com o status 'LOST' em cor mais fraca
 orange_palette = {
